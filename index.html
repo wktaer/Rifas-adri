@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Rifas Adri</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f8f9fa;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    form {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    input, textarea, button {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      width: 100%;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .pdf-content img {
+      width: 60px;
+      height: 60px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Generador de Rifas Adri🎟️</h1>
+<form id="raffleForm">
+  <input type="text" id="title" placeholder="Título (Ej: GRAN RIFA A BENEFICIO)" required>
+  <input type="text" id="subtitle" placeholder="Subtítulo (Ej: Baile Estrella de Belén)" required>
+  <input type="text" id="date" placeholder="Fecha del sorteo" required>
+  <textarea id="prizes" placeholder="Premios" required></textarea>
+  <input type="text" id="value" placeholder="Valor de la rifa" required>
+  <input type="number" id="copies" placeholder="Cantidad de numeros" required>
+  <input type="file" id="image" accept="image/*" required>
+  <button type="submit">Generar Rifa</button>
+</form>
+
+<script>
+  document.getElementById('raffleForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const { jsPDF } = window.jspdf;
+    const title = document.getElementById('title').value;
+    const subtitle = document.getElementById('subtitle').value;
+    const date = document.getElementById('date').value;
+    const prizes = document.getElementById('prizes').value;
+    const value = document.getElementById('value').value;
+    const copies = parseInt(document.getElementById('copies').value);
+    const imageFile = document.getElementById('image').files[0];
+
+    console.log("Datos ingresados: ", title, subtitle, date, prizes, value, copies);
+
+    if (!imageFile) {
+      alert('Por favor, seleccione una imagen.');
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = function () {
+      const imgData = reader.result;
+
+      const doc = new jsPDF({orientation: 'portrait', unit: 'mm', format: 'a4'});
+
+      let number = 1;
+      for (let i = 0; i < Math.ceil(copies / 10); i++) {
+        if (i > 0) doc.addPage();
+
+        doc.setFontSize(26);
+        doc.setFont('helvetica', 'bold');
+        doc.text(title, 105, 20, { align: 'center' });
+
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`"${subtitle}"`, 105, 32, { align: 'center' });
+
+        doc.setFontSize(16);
+        doc.text(`A sortearse el día ${date}, con los tres últimos dígitos de la lotería nacional.`, 105, 44, { align: 'center' });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(`PREMIOS:`, 20, 58);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(14);
+        doc.text(`${prizes}`, 20, 66);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text(`VALOR: $${value}`, 20, 86);
+
+        doc.addImage(imgData, 'JPEG', 140, 55, 50, 50);
+
+        doc.autoTable({
+          startY: 100,
+          head: [['N°', 'NOMBRE', 'TELEFONO']],
+          body: Array.from({ length: 10 }, (_, idx) => {
+            if (number > copies) return ['', '', ''];
+            const num = String(number).padStart(3, '0');
+            number++;
+            return [num, '', ''];
+          }),
+          styles: { halign: 'center', valign: 'middle', fontSize: 14, cellPadding: 4, lineColor: [0, 0, 0], lineWidth: 0.5 },
+          headStyles: { fillColor: [200, 200, 200], textColor: [0, 0, 0], fontStyle: 'bold' },
+          theme: 'grid',
+          tableWidth: 'auto',
+          margin: {left: 20, right: 20}
+        });
+      }
+
+      doc.save('rifa.pdf');
+    };
+
+    reader.onerror = function () {
+      alert('Error al leer la imagen. Por favor, intente de nuevo.');
+    };
+
+    reader.readAsDataURL(imageFile);
+  });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+</body>
+</html>
